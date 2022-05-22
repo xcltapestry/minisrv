@@ -23,7 +23,6 @@ package minisrv
  */
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 	"net/http"
@@ -64,7 +63,6 @@ func (s *HTTPServer) mux() *mux.Router {
 type MiddlewareFunc func(m *negroni.Negroni)
 
 func (s *HTTPServer) AddMiddleware(f MiddlewareFunc) *HTTPServer {
-	fmt.Println(" srv Middleware ")
 	f(s.negroini())
 	return s
 }
