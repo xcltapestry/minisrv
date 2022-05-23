@@ -31,7 +31,7 @@ import (
 
 type HTTPServer struct {
 	srv        *http.Server
-	route      *mux.Router
+	router     *mux.Router
 	middleware *negroni.Negroni
 
 	writeTimeout time.Duration
@@ -53,11 +53,11 @@ func (s *HTTPServer) AddRoute(f RouteFunc) *HTTPServer {
 }
 
 func (s *HTTPServer) mux() *mux.Router {
-	if s.route != nil {
-		return s.route
+	if s.router != nil {
+		return s.router
 	}
-	s.route = mux.NewRouter().StrictSlash(false)
-	return s.route
+	s.router = mux.NewRouter().StrictSlash(false)
+	return s.router
 }
 
 type MiddlewareFunc func(m *negroni.Negroni)
@@ -79,7 +79,7 @@ const _defaultAddr = ":8082"
 
 func (s *HTTPServer) ListenAndServe(addrs ...string) error {
 
-	s.middleware.UseHandler(s.route)
+	s.middleware.UseHandler(s.router)
 
 	addr := _defaultAddr
 	if len(addrs) == 0 {
