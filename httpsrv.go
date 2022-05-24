@@ -23,10 +23,13 @@ package minisrv
  */
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/urfave/negroni"
+	"context"
+	"errors"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/urfave/negroni"
 )
 
 type HTTPServer struct {
@@ -79,22 +82,35 @@ const _defaultAddr = ":8082"
 
 func (s *HTTPServer) ListenAndServe(addrs ...string) error {
 
+	if s.srv != nil {
+		return errors.New("[error] http.Server already exists! ")
+	}
+
 	s.middleware.UseHandler(s.router)
 
 	addr := _defaultAddr
-	if len(addrs) == 0 {
+	if len(addrs) > 0 {
 		for _, v := range addrs {
 			addr = v
 		}
 	}
-	svc := &http.Server{
+	s.srv = &http.Server{
+		// svc := &http.Server{
 		Addr:           addr,
 		Handler:        s.middleware,
 		ReadTimeout:    s.readTimeout,
 		WriteTimeout:   s.writeTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-	return svc.ListenAndServe()
+	return s.srv.ListenAndServe()
+}
+
+//gracefully shutdown the server, waiting max 30 seconds for current operations to complete
+// ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+func (s *HTTPServer) Shutdown(ctx context.Context) {
+	if s.srv != nil {
+		s.srv.Shutdown(ctx)
+	}
 }
 
 func (s *HTTPServer) WithReadTimeout(dur time.Duration) {

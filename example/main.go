@@ -23,18 +23,45 @@ package main
  */
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 	"github.com/xcltapestry/minisrv"
-	"net/http"
 )
 
 func main() {
-	minisrv.NewHTTPServer().
+	srv := minisrv.NewHTTPServer().
 		AddRoute(route).
-		AddMiddleware(middleware).
-		ListenAndServe() // or ListenAndServe(":8082")
+		AddMiddleware(middleware)
+		// ListenAndServe() // or ListenAndServe(":8082")
+
+	go func() {
+		fmt.Println("starting the server at port :8082")
+		err := srv.ListenAndServe() // or ListenAndServe(":3000")
+		if err != nil {
+			fmt.Println("[error] could not start the server. ", "error:", err)
+			os.Exit(1)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Kill)
+
+	sig := <-c
+
+	fmt.Println("shutting down the server. ", "received signal", sig)
+
+	//gracefully shutdown the server, waiting max 30 seconds for current operations to complete
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	srv.Shutdown(ctx)
+
 }
 
 func route(m *mux.Router) {
